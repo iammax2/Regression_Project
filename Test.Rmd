@@ -1,0 +1,208 @@
+---
+title: "Regression_Project"
+author: "Max"
+date: "11/7/2016"
+output: html_document
+---
+# 1). Varible Distributions 
+
+### First read in the data:
+
+```{r begining}
+D <- read.csv(file = "regression_data.csv")
+```
+### Get some summary statistics:
+
+```{r summary stats}
+summary(D)
+```
+The summary is helpful to get a genreal sense of the data, but a visual representation of the data would be helpful. First we will use boxplots to visualize the data:
+
+### Plot the boxplots for each varible:
+```{r boxplot, fig.height=10, fig.width= 15}
+par(mfrow=c(2, 3))
+boxplot(D$RentRate, data = D, main = "Rent Rate")
+boxplot(D$Age, data = D, main = "Age")
+boxplot(D$OperExp, data = D, main ="Monthly Operating Expenses")
+boxplot(D$VacRate, data = D, main ="Vacancy Rate")
+boxplot(D$SqFt, data = D, main ="Square Feet of Building")
+boxplot(D$Taxes, data = D, main ="Monthly Tax Expense")
+```
+Just looking at the boxplots, it appears that Age, Monthly Tax Expenses, Vacancy Rate, and Square Feet of the Building are skewed to the right. Where as Monthly Operating Expenses, and Rent Rate appear about normally distributed. The boxplots are interesting, but univariate density plots would be more telling.  
+
+
+### Univariate Density Plots: 
+```{r plot, fig.height=10, fig.width= 15}
+library(ggplot2)
+source("http://peterhaschke.com/Code/multiplot.R") # Code needed to run the function "multiplot()"
+
+p1 <- ggplot(data = D, aes(D$RentRate)) + geom_density(fill = "black", alpha = .7) + labs(title = "Rent Rate")
+p2 <- ggplot(data = D, aes(D$Age)) + geom_density(fill = "black", alpha = .7) + labs(title = "Age")
+p3 <- ggplot(data = D, aes(D$OperExp)) + geom_density(fill = "black", alpha = .7) + labs(title = "Monthly Operating Expenses")
+p4 <- ggplot(data = D, aes(D$VacRate)) + geom_density(fill = "black", alpha = .7) + labs(title = "Vacancy Rate")
+p5 <- ggplot(data = D, aes(D$SqFt)) + geom_density(fill = "black", alpha = .7) + labs(title = "Square Feet of Building")
+p6 <- ggplot(data = D, aes(D$Taxes)) + geom_density(fill = "black", alpha = .7) + labs(title = "Monthly Tax Expense")
+p7 <- ggplot(data = D, aes(D$W2MiDT)) + geom_density(fill = "black", alpha = .7) + labs(title = "2 miles from downtown, (1 or 0)")
+multiplot(p1, p2, p3, p4, p5, p6, p7, cols = 2)
+```
+
+These graphs help capture a clearer picture of the densities of the seven varibles. As originally thought, Rent Rate has fairly normal distribution. Where as Square Feet of Building, Monthly Operating Expenses,and Vacancy Rate show clear skewness to the right. 
+
+Some misconceptions from the boxplots have been cleared up by these univariate density plots. First, it originally appeared as though Age was skewed to the right. While it does have a large cluster data in the right porortion of the graph, there are clearly two groupings of data present in age. One grouping around an age of 3, another around the age of 15. These groupings could reveal times in the city's building history where a large number of buildings were constructed. It is an interesting trend one could not pick up from the boxplot alone. 
+
+Another observation is that Monthly Operating Expenses seems more obviously skewed left than one could infer from the boxplot of that varible. Finally, a new varible was added to the univariate plot that wasn't in the boxplots: 2 miles from downtown. I orginially didn't want to include this in the density graphs because it was a discrete variable, rather than a continuous variable. Still (keeping in mind the fact that any value between 0 and 1 doesn't exist) this plot proves insightful in that it shows that there are more 0's, or buildings further than 2 miles from downtown, than 1's, buildings that are 2 miles from downtown.
+
+# 2). Correlations
+
+To find the correlations between the varibles, a function called ggpairs will be used. The function ggpairs created a gid of all the possible variable matchings present in the data, and then creates scatter plots or correlation data for the matches. Notice all the graphs running diaganolally down the grid are density plots. When a varible is matched with itself in the grid it produces a density plot. A last note is that each variable pairing occurs twice in the grid. Usually this would create repeats. What ggpairs does to handle this is that it gives scatter plots in the bottom left hand side, and correlation measures in the top right. This way one gets the scatter plot and the correlations for every variable in the data set.
+
+### Measuring correlations between varibles using ggpairs().
+```{r fig.height= 15, fig.width= 15 }
+library(GGally)
+ggpairs(D)
+```
+
+
+Now there are some interesting correlations present in this data, but the goal of the project is to predict the rent rate for a particular building. So the correlations examine will only be the correlations as they relate to predicting rent rate. To do this I will look at the top row of the ggpairs output. Here is a list of the varibles and their correlation to Rent Rate:
+
+- Age, **correlation of -0.25**
+
+- Operating Expenses, **correlation of 0.414**
+
+- Vacancy Rate, **correlation of 0.067**
+
+- Square Feet of the Building, **correlation of 0.535**
+
+- Monthly Tax Expenses, **correlation of 0.535**
+
+- 2 miles from downtown, **correlation of 0.678**
+
+
+**Age shows a weak negative relationship** to Rent Rate. As Age increases, Rent Rate (in a weak way) decreases.
+
+**Operating Expense shows a moderate positive relationship** to Rent Rate. That is as Operating Expense increases, Rent Rate (in a moderately positie way) increases. 
+
+**Vacancy Rate shows no relationship** to Rent Rate. That is as Vacancy Rate increases, Rent Rate stays nearly the same. 
+
+**Square Feet of the Building shows a strong positive relationship** to Rent Rate. That is as Square Feet of the Building increases, Rent Rate (in a strongly positie way) increases.
+
+**Monthly Tax Expenses shows a strong positive relationship** to Rent Rate. That is as Monthly Tax Expenses increases, Rent Rate (in a strongly positie way) increases.
+
+**Weather or not a building is 2 miles from downtown shows a strong positive relationship** to Rent Rate. That is if a building is downtown, Rent Rate (in a strongly positie way) increases.
+
+
+An interesting find from this ggpairs graph is that Square Feet of the Building and Monthly Tax Expenses are a perfect 1 to 1 match with their correlations. This means that they are directly dependent on one another. An example of how this could happen is that a city charges taxes based purly on the square footage of a building. This is to say, from a modeling standpoint, Monthly Tax Expenses doesn't add any meaningful information towards predicting Rent Rate that is not already expressed in the variable Square Feet of the Building.
+
+
+# 3). Building the Model
+
+
+### Evaluation of Potential Predictor Variables:
+```{r linear model }
+library(car)
+D$W2MiDT <- factor(D$W2MiDT) # Specify W2MiDT as having levels
+fit1<- lm(D$RentRate ~ D$Age + D$OperExp + D$VacRate + D$SqFt + D$Taxes + D$W2MiDT)
+summary(fit1)
+```
+
+##### Coefficients in the ANOVA Test
+
+A lot of important information is contatined in this summary. First notice the "Coefficients:" section of the summary output. This shows the intercept for our model (**12.41**), as well as all the regression coefficients for each varible. Notice the coefficent table also reveals the standard error, t-value, and probabillity we accepct the null hypothesis that each cooresponding regression coefficient equals 0. 
+
+The t value and the Pr(>|t|) column are important for this summary. The Pr(>|t|) column tells us the probabillity someone would observe the effect this variable has given that the regression coefficient equals 0. This statistic helps one decide if we keep or reject the null hypothesis that each regression coefficient equals 0. This rejection or acceptance is based on the signifigance level. To reject the null hypothesis this statistic has to be **below** the signifigance level. 
+
+For example, the Pr(>|t|) value for Vacancy Rate is 0.87. That is, if the regression coefficient for Vancancy Rate was 0, 87% of the samples would have the effect that Vacancy Rate has. This value is so high, we have no grounds to reject the null hypothesis that the regression coefficient for Vancancy Rate is 0. Vacancy Rate may have a regression coefficent not equal to 0, but there's not enough statistical evidence to assume that. 
+
+Now looking at the Pr(>|t|) value for Age, we see a different situation. The Pr(>|t|) value is 1.98e-5. That is, there is an extremely low probabillity (.00198% chance) the regression coefficient for Age equals 0. The probabillity is so low we can reject the null hypothesis that this regression coefficient equals 0. 
+
+*Using this process, and a signifigance level of .05, we can reject the null hypothesis that the regression coefficient equals 0 for the variables Age, Operating Expenses, W2MiDT, and the intercept.* The Pr(>|t|) value for Square Feet, Monthly Tax Expenses, and Vacancy Rate was too large to reject the null hypothesis. This tells us we should take caution when including any of these varibles in our model because we're not confident enough their regression coefficients are not 0. 
+
+##### Adjusted R-squared, F-statistic, and P-value Explaination for ANOVA Test
+
+The values we now want to consider are contained in the bottom three lines of the ANOVA output. With the 
+
+```{r anova }
+anova(fit1)
+```
+
+
+### Review and Interpretation of VIF
+``` {r VIF}
+vif(fit1)
+```
+Notice that the resuts of this VIF test shows that we have multicollinearity. For four variables the VIF values are below 2, then Square Feet and Monthly Tax Expenses have a VIF value well above 10, so there is **strong** multicollinearity between these two variables. Which means we can get rid of one or both of the variables. If we recall the summary of the first model "fit1", we saw that the both Square Feet and Monthly Tax Expenses both had a Pr(>|t|) value greater than the signifigance level of .05. This VIF test confirms that we should remove at least one of the variables, and the original model suggested we should remove both varibles from the model. For now, we will move forward and test some diagnostic asspects of the data. Later interations of the model will take these VIF results in mind. 
+
+
+
+### Diagnostic Plot: Graphing Residuals for Variance Test
+``` {r residual}
+fit.df <- fortify(fit1)
+ggplot(fit.df, aes(x= .fitted, y = .resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = 2) +
+  labs(x = "Fitted Values", y ="Residuals")
+
+```
+
+Here we see that there's no *appearent* pattern in the residual plot. This helps us verify that the variance is constant. But to make sure let's examine the ncvTest:
+
+
+
+### NcvTest to Confirm Variance
+```{r ncv}
+ncvTest(fit1)
+```
+
+The results of this test are interesting. The associated p-value gives us 0.057, which means it just *barely* passes as having a constant varience. Hopefully we can create a model with better ncvTest results. 
+
+
+
+### Diagnostic Plot: QQplot for Nomalacy Test
+```{r qq, fig.height= 8, fig.width= 8}
+qqPlot(fit1, pch=16)
+```
+This diagnostic qqplot shows our the residuals of our model almost entirely fit inside the red lines, meaning the residuals are about normal. To double check this thinking, we'll use the Shapiro-Wilk test:
+```{r sharpiro-wilk}
+shapiro.test(fit1$residuals)
+```
+The results show that the residuals have a low level of normalacy, but not enough to reject the residuals as being non-normal.
+
+
+### Recreating the model
+
+First we'll use the results from the intial summary and delete Vacancy, Square Feet, and Monthly Tax Expenses as variables. Then we'll compare the R-squared values to see if it's a better fit
+```{r recreate}
+fit2<- lm(D$RentRate ~ D$Age + D$OperExp + D$W2MiDT)
+summary(fit2)
+```
+Wow! So the R-squared value is lower with the new model. Hmmm, let's throw Square Feet back into the model, but not Monthly Tax Expenses (because of the VIF test) and not Vacancy (because of the high Pr(>|t|) value). 
+
+### Recreating the model, Try Two! 
+```{r recreate2}
+fit3<- lm(D$RentRate ~ D$Age + D$OperExp + D$SqFt + D$W2MiDT)
+summary(fit3)
+```
+Perfect! So now the R-squared value is higher than the original model 'fit1', which means the model 'fit3' is a higher predictor of Rent Rate than the original model. Let's run some diagnostic tests to see if it performs better:
+
+### VIF for New Model
+``` {r VIF2}
+vif(fit3)
+```
+Great! All the values are below 10, so we've passed the VIF test with model fit3
+
+### NcvTest for New Model
+```{r ncv2}
+ncvTest(fit3)
+```
+Unforchunately this new model has a very slighly lower score for varience. The good news is that it is still above the signifigance level of .05, but just barely. 
+
+### Normalcy Test for New Model
+```{r sharpiro-wilk2}
+shapiro.test(fit1$residuals)
+```
+Our p-value associated with normalcy has also dropped, but once again, not much. The p-value associated with the new p-value is 0.093 where as the first p-value was 0.133. This is not a major drop in order to increase the R-squared value.
+
+
+```{r leverage }
+leveragePlots(fit1, pch = 16)
+```
