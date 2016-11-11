@@ -1,0 +1,295 @@
+---
+title: "Regression_Project"
+author: "Max Thompson, Lauren Gardiner"
+date: "11/11/2016"
+output: html_document
+---
+# 1). Variable Distributions 
+
+### First read in the data:
+
+```{r beginning}
+D <- read.csv(file = "regression_data.csv")
+```
+### Get some summary statistics:
+
+```{r summary stats}
+summary(D)
+```
+This summary is helpful to get a general sense of the data, but a visual representation of the data would be helpful. First we will use box-plots to visualize the data:
+
+### Box-plots for each variable:
+```{r boxplot, fig.height=10, fig.width= 15}
+par(mfrow=c(2, 3))
+boxplot(D$RentRate, data = D, main = "Rent Rate")
+boxplot(D$Age, data = D, main = "Age")
+boxplot(D$OperExp, data = D, main ="Monthly Operating Expenses")
+boxplot(D$VacRate, data = D, main ="Vacancy Rate")
+boxplot(D$SqFt, data = D, main ="Square Feet of Building")
+boxplot(D$Taxes, data = D, main ="Monthly Tax Expense")
+```
+Looking at the box-plots, it appears that Age, Monthly Tax Expenses, Vacancy Rate, and Square Feet of the Building are skewed to the right. Where as Monthly Operating Expenses and Rent Rate appear about normally distributed. The box-plots are interesting, but univariate density plots would be better suited to understand the variable distributions in our dataset.
+
+
+### Univariate Density Plots: 
+```{r plot, fig.height=10, fig.width= 15}
+library(ggplot2)
+source("http://peterhaschke.com/Code/multiplot.R") # Code needed to run the function "multiplot()"
+
+p1 <- ggplot(data = D, aes(D$RentRate)) + geom_density(fill = "black", alpha = .7) + labs(title = "Rent Rate")
+p2 <- ggplot(data = D, aes(D$Age)) + geom_density(fill = "black", alpha = .7) + labs(title = "Age")
+p3 <- ggplot(data = D, aes(D$OperExp)) + geom_density(fill = "black", alpha = .7) + labs(title = "Monthly Operating Expenses")
+p4 <- ggplot(data = D, aes(D$VacRate)) + geom_density(fill = "black", alpha = .7) + labs(title = "Vacancy Rate")
+p5 <- ggplot(data = D, aes(D$SqFt)) + geom_density(fill = "black", alpha = .7) + labs(title = "Square Feet of Building")
+p6 <- ggplot(data = D, aes(D$Taxes)) + geom_density(fill = "black", alpha = .7) + labs(title = "Monthly Tax Expense")
+p7 <- ggplot(data = D, aes(D$W2MiDT)) + geom_density(fill = "black", alpha = .7) + labs(title = "2 miles from downtown, (1 or 0)")
+multiplot(p1, p2, p3, p4, p5, p6, p7, cols = 2)
+```
+
+These graphs help capture a clearer picture of the densities of the seven variables. As originally thought, Rent Rate has fairly normal distribution. Where as Square Feet of Building, Monthly Operating Expenses, and Vacancy Rate show clear skewness to the right. 
+
+Some misconceptions from the box-plots have been cleared up by these univariate density plots. First, it originally appeared as though Age was skewed to the right. While it does have a large cluster data in the right portion of its graph, there are clearly two groupings of data present in age. One grouping around an age of 3, another around the age of 15. These groupings could reveal times in the city's building history where a large number of buildings were constructed. These two clusters of data are an interesting trend one could not pick up from the box-plot alone. 
+
+Another observation is that Monthly Operating Expenses seems more obviously skewed left than one could infer from the box-plot alone of that variable. Finally, a new variable was added to the univariate plot that wasn't in the box-plots: 2 miles from downtown. I originally didn't want to include this in the density graphs because it was a discrete variable, rather than a continuous variable. Still (keeping in mind the fact that any value between 0 and 1 doesn't exist) this plot proves insightful in that it shows that there are more 0's, or buildings further than 2 miles from downtown, than 1's, buildings that are 2 miles from downtown.
+
+# 2). Correlations
+
+To find the correlations between the variables, a function called ggpairs will be used. The function ggpairs created a grid of all the possible variable matchings present in the data, and then creates scatter plots or correlation data for the matches. Notice all the graphs running diagonally down the grid are density plots. When a variable is matched with itself in the grid it produces a density plot. A last note is that each variable pairing occurs twice in the grid. Usually this would create repeats. What ggpairs does to handle this repeated information is that it creates scatter plots in the bottom left hand side, and correlation measures in the top right portion of the grid. This way one gets the scatter plot and the correlations for every variable in the data set.
+
+### Measuring correlations between variables using ggpairs().
+```{r fig.height= 15, fig.width= 15 }
+library(GGally)
+ggpairs(D)
+```
+
+
+Now there are some interesting correlations present in this data, but the goal of the project is to predict the rent rate for a particular building. So the correlations examine will only be the correlations as they relate to predicting rent rate. To do this I will look at the top row of the ggpairs output. Here is a list of the variables and their correlation to Rent Rate:
+
+- Age, **correlation of -0.25**
+
+- Operating Expenses, **correlation of 0.414**
+
+- Vacancy Rate, **correlation of 0.067**
+
+- Square Feet of the Building, **correlation of 0.535**
+
+- Monthly Tax Expenses, **correlation of 0.535**
+
+- 2 miles from downtown, **correlation of 0.678**
+
+
+**Age shows a weak negative relationship to Rent Rate**. As Age increases, Rent Rate (in a weak way) decreases.
+
+**Operating Expense shows a moderate positive relationship to Rent Rate**. That is, as Operating Expense increases, Rent Rate (in a moderately positive way) increases. 
+
+**Vacancy Rate shows no relationship to Rent Rate**. That is, as Vacancy Rate increases, Rent Rate stays nearly the same. 
+
+**Square Feet of the Building shows a strong positive relationship to Rent Rate**. That is, as Square Feet of the Building increases, Rent Rate (in a strongly positive way) increases.
+
+**Monthly Tax Expenses shows a strong positive relationship to Rent Rate**. That is, as Monthly Tax Expenses increases, Rent Rate (in a strongly positive way) increases.
+
+**Weather or not a building is 2 miles from downtown shows a strong positive relationship to Rent Rate**. That is if a building is downtown, Rent Rate (in a strongly positive way) increases.
+
+
+An interesting find from this ggpairs graph is that Square Feet of the Building and Monthly Tax Expenses are a perfect 1 to 1 match with their correlations. This means that they are directly dependent on one another. An example of how this could happen is that a city charges taxes based directly on the square footage of a building. This is to say, from a modeling standpoint, Monthly Tax Expenses doesn't add any meaningful information towards predicting Rent Rate that is not already expressed in the variable Square Feet of the Building.
+
+
+# 3). Building the Model
+
+
+### Evaluation of Potential Predictor Variables:
+```{r linear model }
+library(car)
+D$W2MiDT <- factor(D$W2MiDT) # Specify W2MiDT as having levels
+fit1<- lm(D$RentRate ~ D$Age + D$OperExp + D$VacRate + D$SqFt + D$Taxes + D$W2MiDT)
+summary(fit1)
+```
+
+#### Using Coefficients to Evaluate Potential Predictor Variables
+
+A lot of important information is contained in this summary. First notice the "Coefficients:" section of the summary output. This shows the intercept for our model (**12.41**), as well as all the regression coefficients for each variable. Notice the coefficient table also reveals the standard error, t-value, and probability associated with the t-value.
+
+The t-value and the Pr(>|t|) column are important for this summary. The Pr(>|t|) column tells us the probability someone would observe the effect this variable has given that the regression coefficient equals 0. This statistic helps one decide if we keep or reject the null hypothesis that each regression coefficient equals 0. This rejection or acceptance is based on the significance level. **To reject the null hypothesis this statistic has to be below the significance level.**
+
+For example, the Pr(>|t|) value for Vacancy Rate is 0.87. This value is so high, we have no grounds to reject the null hypothesis that the regression coefficient for Vacancy Rate is 0. Vacancy Rate may have a regression coefficient not equal to 0, but there's not enough statistical evidence to assume that. 
+
+Now looking at the Pr(>|t|) value for Age, we see a different situation. The Pr(>|t|) value is 1.98e-5. That is, there is an extremely low probability (.00198% chance) the regression coefficient for Age equals 0. The probability is so low we can reject the null hypothesis that this regression coefficient equals 0. 
+
+**Using this process, and a significance level of .05, we can reject the null hypothesis that the regression coefficient equals 0 for the variables: Age, Operating Expenses, W2MiDT, and the intercept. The Pr(>|t|) value for Square Feet, Monthly Tax Expenses, and Vacancy Rate was too large to reject the null hypothesis. This tells us we should take caution when including any of these variables in our model because we're not statistically confident enough their regression coefficients are not 0.**
+
+#### Adjusted R-squared, and P-value Explanation for ANOVA Test
+
+The values we now want to consider are contained in the bottom two lines of the summary output. **With an adjusted r-squared value of 0.6684, we can conclude that the current model predicts 66.84% of the variance in the variable Rent Rate.** Using the bottom p-value, we can also reject the null hypothesis that all of our regression coefficients equal 0. That is, at least one or more of our regression coefficients is not equal to 0.
+
+
+### Review and Interpretation of VIF
+``` {r VIF}
+vif(fit1)
+```
+Notice that the results of this VIF test shows that we have multicollinearity. For four variables the VIF values are below 2, then Square Feet and Monthly Tax Expenses have a VIF value well above 10, so there is **strong** multicollinearity between these two variables. Which means we can get rid of one or both of the variables. If we recall the summary of the first model "fit1", we saw that both Square Feet and Monthly Tax Expenses both had a Pr(>|t|) value greater than the significance level of .05. This VIF test confirms that we should remove at least one of the variables, and the original model suggested we should remove both variables from the model. For now, we will move forward and test some diagnostic aspects of the data. Later iterations of the model will take these VIF results in mind. 
+
+
+
+### Diagnostic Plot: Graphing Residuals for Variance Test
+``` {r residual}
+fit.df <- fortify(fit1)
+ggplot(fit.df, aes(x= .fitted, y = .resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = 2) +
+  labs(x = "Fitted Values", y ="Residuals")
+
+```
+
+Here we see that there's no *apparent* pattern in the residual plot. This helps us verify that the variance in our residuals are constant. But to make sure let's examine the ncvTest:
+
+
+
+### NcvTest to Confirm Variance
+```{r ncv}
+ncvTest(fit1)
+```
+
+The results of this test are interesting. The associated p-value gives us 0.057, which means the model's residuals just *barely* passes as having a constant variance. Hopefully we can create a model with better ncvTest results. 
+
+
+
+### Diagnostic Plot: QQplot for Normalcy Test
+```{r qq, fig.height= 8, fig.width= 10}
+qqPlot(fit1, pch=16)
+```
+
+
+This diagnostic qqplot shows our the residuals of our model almost fit inside the red lines, meaning the residuals are about normal. There's a definite hump in the residuals around t quantile -1 to 0. In this interval, the residuals fall outside the boundaries for normalcy. There is also an outlier around t quantile -2 that falls outside the normalcy boundary. Both of these observations are suspect, so we need to use the Shapiro-Wilk test to quantitatively test normalcy:
+
+```{r sharpiro-wilk}
+shapiro.test(fit1$residuals)
+```
+The results show that the residuals have a low level of normalcy (0.1334), but this p-value is not low enough to reject the residuals as being non-normal.
+
+
+### Recreating the model
+
+First we'll use the results from the initial summary and delete Vacancy, Square Feet, and Monthly Tax Expenses as variables. Then we'll compare the R-squared values to see if it's a better fit
+```{r recreate}
+fit2<- lm(D$RentRate ~ D$Age + D$OperExp + D$W2MiDT)
+summary(fit2)
+```
+Wow! So the R-squared value is lower with the new model. Hmmm, let's throw Square Feet back into the model, but not Monthly Tax Expenses (because of the VIF test) and not Vacancy (because of the high Pr(>|t|) value). 
+
+Note: I'm using Square Feet as a variable but could have easily choosen Month Tax Expenses. I think Square Feet is an easier statistic to get for various buildings, so it'll make the end model easier to use.
+
+### Recreating the model, Try Two! 
+```{r recreate2}
+fit3<- lm(D$RentRate ~ D$Age + D$OperExp + D$SqFt + D$W2MiDT)
+summary(fit3)
+```
+Perfect! So now the R-squared value for model fit3 (0.671) is higher than the R-squared value for the original model fit1 (0.668), which means the model fit3 is a higher predictor of Rent Rate than the original model. 
+
+Now some important differences should be noted between this model and the original model. Notice the probability associated with every variable's t-value ( Pr(>|t|) ) is now statistically signifigant! (That is the value is below the significance level of .05). This is a huge improvement over the first model. Now we can safely reject the null hypothesis for *every* variable that their regression coefficients are equal to 0.
+
+Since every regression coefficient is now statistically significant, here is a list of said regression coefficients for each variable in our model:
+
+- The Intercept is 1.239e+01
+
+- Age is -9.557e-02
+
+- Operation Expense is 2.159e-01
+
+- Square Feet of the Building is 5.833e-06
+
+- W2MiDT1 is 1.406e+00
+
+Now let's discuss the model's F-statistic. The F-statistic for this model is *highly* significant with a value of 41.8. The associated p-value with this F-statistic is less than 2.2e-16. Which means we can reject the null hypothesis that all our regression coefficients equal zero. 
+
+
+It is worth noting that fit3 is not *that* much better than the original model. 66.8% predictability verses 67.1% predictability is only a .4% increase in predictability between models. This is a small increase, but it is still better than the original model at predicting Rent Rate. Plus no other combination of variables has a R-squared value higher than model fit3. So it very well may be the best predictability one can arrive at using the data given.
+
+Okay, now let's run some diagnostic tests on the new model:
+
+### VIF for New Model
+``` {r VIF2}
+vif(fit3)
+```
+Great! All the values are below 10, so we've passed the VIF test with model fit3.
+
+### Graphing Residuals for New Model
+``` {r residual2, fig.height= 8, fig.width= 10}
+fit.df2 <- fortify(fit3)
+ggplot(fit.df2, aes(x= .fitted, y = .resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = 2) +
+  labs(x = "Fitted Values", y ="Residuals")
+
+```
+This is not the ideal graph one would want for the residuals of a model. Just like the first residual graph, there is no *apparent* pattern, but it is unsettling that the values seem to 'flair out' from 13 to 14.5, then suddenly cluster in and hug the line y = 0 from 15 to 16, only to then flair out again as the fitted values pass 16. It *almost* appears quadratic. This is why a ncvTest is needed:
+
+### NcvTest for New Model
+```{r ncv2}
+ncvTest(fit3)
+```
+Unfortunately this new model has a  slightly lower score for variance than the original model. The good news is that it is still above the significance level of .05, but just barely. 
+
+### Normalcy Test for New Model
+```{r sharpiro-wilk2}
+shapiro.test(fit3$residuals)
+```
+Our p-value associated with normalcy has also dropped, but not much. The p-value associated with the new model fit3 is 0.093, where as the first p-value with model fit1 was 0.133. This is not a major drop in normalcy between models, and both p-value are above a significance level of .05, but it is still worth noting that the new model has lower normalcy. 
+
+### Conclusion for Model Fit3, and Commentary Regarding Missing Variables
+
+All in all, model fit3 is only .4% better at predicting Rent Rate than the original model fit1. This is surprising because model fit1 had multicollinearity and a variable 'Vacancy Rate' that had a very high Pr(>|t|) value. Removing the multicollinearity by getting rid of the variable Monthly Tax Expenses, and deleting the variable Vacancy Rate did increase the predictability of the model. But it was marginal. I believe this is due to the fact that the original dataset is limiting in its power to predict Rent Rate for a given building. 
+
+If one was given access to additional data, the model could have been a better predictor of Rent Rate. The dataset only had information on 81 buildings. If there was data on several hundred buildings in the city, the model would probably have better predictability. Also some level based information on building type could be useful. For example, maybe office space verse retail building space reflect different rent rates. Available office space in a particular city could be an oversaturated market, and thus lower the rent rates for this building type. 
+
+Other important data could be closeness to certain 'high value' and 'low value' areas. For example, a building across the street from a sewer plant will have lower rent rate than a building across the street from a city park. A final variable that could gain insight into rent rate would be average rent rate of buildings within half a mile of a particular building. A great predictor of a building's value is the value of buildings surrounding a given building. Usually high value buildings are clustered together, while lower value buildings are also clustered together.
+
+# 4). Applying the Model
+
+### Final Model as a Mathematical Function
+
+First we need to take the results of the Coefficients section of the summary output for the linear model fit3 to build the actual function for outputting rent rate. 
+
+```{r linear building}
+summary(fit3)
+
+rent_rate <- function(age, square_feet, operating_expenses, downtown_0_or_1){
+  line_rr <- 1.239e+01 +  -9.557e-02*(age) + 2.159e-01*(operating_expenses) + 5.833e-06*(square_feet) + 1.406e+00*(downtown_0_or_1)
+  return(line_rr)
+}
+```
+
+Okay, now we will take the values given in the original problem and plug them into our model:
+
+```{r testing model}
+rent_rate(age = 9, square_feet = 40000, operating_expenses = 13, downtown_0_or_1 = 0)
+```
+
+### Interpretation of Results
+
+The value produced by our model is 14.570. This value needs to be interpreted in terms of the problem: A building that is 9 years old, has a total square footage of 40,000 feet, incurs 13,000.00 dollars in operating expenses and 540.00 dollars in taxes per month, and is not located within two miles of downtown **should be rented (according to the model) for 14,570 dollars.** (answer has been rounded to nearest whole dollar amount).
+
+The original business related inquiry was weather or not the owner of this building should keep it to rent, or sell the building flat out. **Based on the predicted rent rate of 14,570 dollars per month, it would be in the best interest of the owner to rent the building out each month.** This is because total expenses (operating costs, and taxes) are less than the rent rate, meaning the owner would make a net profit each month. Here's the math to find out exactly how much the owner would make:
+```{r rent calc}
+rent <- 14570
+taxes <- 540
+operating_expenses <- 13000
+net_profit <- rent - taxes - operating_expenses
+net_profit
+```
+
+These calculations show that the owner would make 1,030 dollars a month renting out the building at the amount estimated by the model. This is not a huge amount of money, but assuming the owner could lower the operating expenses by some margin (say 10%) and rent it out for 10% above the model's predicted rent rate, the owner stands to make significantly more money:
+
+``` {r rent rate calc2}
+lower_costs_net_profit <- 1.1*rent - taxes - 0.9*operating_expenses
+lower_costs_net_profit
+```
+In this situation the owner would make 3,787 dollars a month. This is almost 3 times the amount of money each month as the original situation. So as is, the building stands to make a profit. But lowering operation costs and renting out above the model's predicted value could make the owner good money. 
+
+### Shortcomings of the Model
+
+The largest shortcoming of the model is its low R-squared value. The final model had an R-squared value of 0.671, which means the model predicted 67.1% of the variance in the output Rent Rate. These results are decent, but they could certainly be stronger. This lack of stronger predictability in the model is due to a lack data. For the amount of data given (81 buildings), our model having 67.1% predictability for rent rate is good. 
+
+From a practical standpoint, the model fails in that it is just a model, and models don't represent a lot subtleties in life when doing business. For example, the owner's building could look unappealing, but in every other way be suitable as an office space. In this case the aesthetic value of the building (which is very hard to measure) would cause the building to sink below its expected value. Or the building could be located in an area that's projected to grow in the next five years, making the land more valuable to investors. This would increase the value of the building, but once again be hard to quantitize in a reliable way. Thus this model should only be seen as a tool to assist someone in thinking through the rent rate of their particular building, not as a hard-and-fast value their building rent rate must adhere to. 
+
+At the very least it could be used as a reference to compare a rent rate to. In doing this, it could flush out some of those subtle life variables not represented in the data. For example, say a building rents out for 15,000 dollars, but the model only projects the building to be worth 13,500 dollars a month. This could lead someone to better examine the factors which are outside the model (aesthetic value, persuasive power of a sales person, location benefits/harms, ect.) which increase the value of their particular building. This process could lead someone to gain deeper insight about the true market value of their building. 
+
